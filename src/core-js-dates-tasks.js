@@ -32,13 +32,7 @@ function dateToTimestamp(date) {
  * Date(2015, 10, 20, 23, 15, 1) => '23:15:01'
  */
 function getTime(date) {
-  const dateObj = new Date(date);
-
-  const hours = String(dateObj.getHours()).padStart(2, '0');
-  const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-  const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-
-  return `${hours}:${minutes}:${seconds}`;
+  return date.toLocaleTimeString();
 }
 
 /**
@@ -63,7 +57,7 @@ function getDayName(date) {
     'Saturday',
   ];
 
-  const dayOfWeek = new Date(date).getDay();
+  const dayOfWeek = new Date(date).getUTCDay();
   return week[dayOfWeek];
 }
 
@@ -82,7 +76,7 @@ function getNextFriday(date) {
   const FRIDAY_INDEX = 5;
   const DAYS_IN_WEEK = 7;
 
-  const dayOfWeek = new Date(date).getDay();
+  const dayOfWeek = new Date(date).getUTCDay();
 
   let offset = (FRIDAY_INDEX - dayOfWeek + DAYS_IN_WEEK) % DAYS_IN_WEEK;
   if (offset === 0) {
@@ -90,7 +84,7 @@ function getNextFriday(date) {
   }
 
   const nextFriday = new Date(date);
-  nextFriday.setDate(nextFriday.getDate() + offset);
+  nextFriday.setUTCDate(nextFriday.getUTCDate() + offset);
 
   return nextFriday;
 }
@@ -221,21 +215,19 @@ function getCountWeekendsInMonth(month, year) {
  * Date(2024, 1, 23) => 8
  */
 function getWeekNumberByDate(date) {
-  const days = [];
-  const currentYear = date.getFullYear();
-  const currentMonth = date.getMonth();
-  const currentDate = date.getUTCDate();
-  days.push(currentDate);
-  const monthsPassed = currentMonth;
-  if (monthsPassed) {
-    for (let i = 0; i < monthsPassed; i += 1) {
-      const daysInMonth = new Date(currentYear, currentMonth - i, 0);
-      days.push(daysInMonth.getDate());
-    }
-  }
+  const utcDate = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  );
 
-  const weeks = Math.floor(days.reduce((acc, cur) => acc + cur, 0) / 7) + 1;
-  return weeks;
+  const dayOfWeek = utcDate.getUTCDay();
+  const daysUntilThursday = 4 - (dayOfWeek || 7);
+  utcDate.setUTCDate(utcDate.getUTCDate() + daysUntilThursday);
+
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  const daysSinceYearStart = (utcDate - yearStart) / 1000 / 60 / 60 / 24;
+  const weekNumber = Math.ceil((daysSinceYearStart + 1) / 7);
+
+  return weekNumber;
 }
 
 /**
